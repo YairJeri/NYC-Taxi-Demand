@@ -44,7 +44,6 @@ func (c *TCPClient) Start() {
 		}
 
 		log.Printf("[WORKER] conectado como %s", c.id)
-
 		hostname, _ := os.Hostname()
 		cores, _ := cpu.Counts(true)
 		vmStat, _ := mem.VirtualMemory()
@@ -69,7 +68,6 @@ func (c *TCPClient) Start() {
 		}
 
 		go c.metricsLoop(conn)
-
 		c.listen(conn)
 
 		log.Printf("[WORKER] desconectado, reintentando...")

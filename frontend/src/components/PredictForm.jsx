@@ -32,7 +32,6 @@ export default function PredictForm() {
             const mVal = parseFloat(month) || 1;
 
             let features = [];
-
             if (modelType === 'A') {
                 features = [
                     Math.sin(2 * Math.PI * hVal / 24), Math.cos(2 * Math.PI * hVal / 24),
@@ -45,7 +44,6 @@ export default function PredictForm() {
                 histArray.length = 24;
 
                 const lag = Math.log1p(parseFloat(weeklyLag) || 0);
-
                 features = [
                     Math.sin(2 * Math.PI * hVal / 24), Math.cos(2 * Math.PI * hVal / 24),
                     Math.sin(2 * Math.PI * wVal / 7), Math.cos(2 * Math.PI * wVal / 7),
@@ -70,18 +68,18 @@ export default function PredictForm() {
 
             if (!res.ok) {
                 if (res.status === 404) throw new Error('API not implemented yet (404)');
-                throw new Error(await res.text() || res.statusText);
+
+                // Extrae el mensaje de error del backend (ej: "Prediction failed: model not initialized")
+                const errorText = await res.text();
+                throw new Error(errorText || `Error de servidor: ${res.statusText}`);
             }
 
             const data = await res.json();
             setResult(data.prediction ? Math.max(0, Math.round(data.prediction)) : 0);
         } catch (err) {
-            console.warn(err);
-            setTimeout(() => {
-                setResult(Math.floor(Math.random() * 50) + 10);
-                setLoading(false);
-            }, 800);
-            return;
+            console.error(err);
+            // Guardamos el error real en el estado para mostrarlo en pantalla
+            setError(err.message || 'Ocurrió un error inesperado al procesar la predicción.');
         } finally {
             setLoading(false);
         }
@@ -94,7 +92,6 @@ export default function PredictForm() {
                     <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     Parámetros de Inferencia
                 </h2>
-
                 <form onSubmit={handleSubmit} class="flex flex-col gap-6">
                     <div>
                         <label class="block text-sm font-bold text-gray-400 mb-2 uppercase">Modelo</label>
@@ -103,7 +100,6 @@ export default function PredictForm() {
                             <button type="button" onClick={() => setModelType('B')} class={`flex-1 py-2 text-sm font-bold rounded-sm transition-colors ${modelType === 'B' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Temporal (B)</button>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-bold text-gray-400 mb-2 uppercase">Zona de Recogida</label>
@@ -157,7 +153,6 @@ export default function PredictForm() {
                             </select>
                         </div>
                     </div>
-
                     {modelType === 'B' && (
                         <div class="flex flex-col gap-4 pt-4 border-t border-gray-700">
                             <div>
@@ -179,7 +174,6 @@ export default function PredictForm() {
                             </div>
                         </div>
                     )}
-
                     <div class="mt-4">
                         <button type="submit" disabled={loading} class="w-full bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-md font-bold disabled:opacity-50 transition-colors">
                             {loading ? 'Ejecutando Inferencia...' : 'Predecir Demanda'}
@@ -187,23 +181,25 @@ export default function PredictForm() {
                     </div>
                 </form>
             </div>
-
             <div class="md:col-span-2 flex flex-col gap-4">
                 <div class="bg-gray-800 border border-gray-700 rounded-md p-6 flex-1 flex flex-col items-center justify-center min-h-[250px]">
                     <div class="text-sm text-gray-500 font-bold uppercase tracking-widest mb-4">Predicción</div>
-
                     {loading ? (
                         <svg class="animate-spin w-12 h-12 text-blue-500" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle><path fill="currentColor" opacity="0.75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    ) : error ? (
+                        <div class="flex flex-col items-center text-center px-4">
+                            <svg class="w-12 h-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span class="text-red-400 text-sm font-semibold mb-1">Error de Inferencia</span>
+                            <span class="text-gray-400 text-xs">{error}</span>
+                        </div>
                     ) : result !== null ? (
                         <div class="flex flex-col items-center">
                             <span class="text-6xl font-bold text-gray-100">
                                 {result}
                             </span>
                             <span class="text-gray-400 text-sm mt-2">Viajes esperados</span>
-                        </div>
-                    ) : error ? (
-                        <div class="text-red-400 text-sm text-center px-4">
-                            {error}
                         </div>
                     ) : (
                         <div class="text-gray-500 text-sm italic">

@@ -21,6 +21,13 @@ func NewTrainingJob(modelType int, steps int, paramServers map[string]*Parameter
 	var modelKey string
 	var cfg models.ModelConfig
 
+	activeWorkers := nm.GetWorkersSnapshot()
+	activeCount := len(activeWorkers)
+
+	if activeCount == 0 {
+		return nil, fmt.Errorf("no workers available to start training")
+	}
+
 	if modelType == models.ModelStatic {
 		modelKey = "A"
 		cfg = models.ModelConfig{
@@ -77,6 +84,7 @@ func (tj *TrainingJob) Start() error {
 
 	if activeCount == 0 {
 		log.Println("[MASTER ERROR] No workers available to start training")
+		tj.onComplete()
 		return fmt.Errorf("no workers available")
 	}
 

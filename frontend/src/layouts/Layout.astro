@@ -1,87 +1,129 @@
 ---
-import { ClientRouter } from 'astro:transitions';
-import '../styles/global.css';
+import { ClientRouter } from "astro:transitions";
+import "../styles/global.css";
 
 interface Props {
-	title: string;
+    title: string;
 }
 
 const { title } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 const navItems = [
-  { name: 'Nodos', path: '/workers', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
-  { name: 'Entrenamiento', path: '/train', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-  { name: 'Inferencia', path: '/predict', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+    {
+        name: "Nodos",
+        path: "/workers",
+        icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+    },
+    {
+        name: "Entrenamiento",
+        path: "/train",
+        icon: "M13 10V3L4 14h7v7l9-11h-7z",
+    },
+    {
+        name: "Inferencia",
+        path: "/predict",
+        icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+    },
 ];
 ---
 
 <!doctype html>
 <html lang="es">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<title>{title} - Plataforma NeuroOps</title>
-		<ClientRouter />
-	</head>
-	<body class="flex h-screen overflow-hidden bg-gray-900 text-gray-100 font-sans">
-        
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <title>{title} - Plataforma NeuroOps</title>
+        <ClientRouter />
+    </head>
+    <body
+        class="flex h-screen overflow-hidden bg-gray-900 text-gray-100 font-sans"
+    >
         <!-- Sidebar -->
-        <aside class="w-64 flex-shrink-0 border-r border-gray-800 bg-gray-800 flex flex-col">
+        <aside
+            class="w-64 flex-shrink-0 border-r border-gray-800 bg-gray-800 flex flex-col"
+        >
             <div class="h-16 flex items-center px-6 border-b border-gray-700">
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 bg-blue-500 rounded-sm"></div>
                     <span class="font-bold text-lg text-white">NeuroOps</span>
                 </div>
             </div>
-            
+
             <nav class="flex-1 py-6 px-4 flex flex-col gap-2">
-                <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-2">Menú del Sistema</div>
-                
-                {navItems.map((item) => {
-                    const isActive = currentPath === item.path || (currentPath === '/' && item.path === '/workers');
-                    return (
-                        <a 
-                            href={item.path} 
-                            class={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-                                isActive 
-                                    ? 'bg-blue-600 text-white font-medium' 
-                                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                            }`}
-                        >
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon} />
-                            </svg>
-                            {item.name}
-                        </a>
-                    );
-                })}
-            </nav>
-            
-            <div class="p-4 border-t border-gray-700">
-                <div class="text-xs text-gray-400 flex items-center gap-2 font-medium">
-                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                    API Conectada
+                <div
+                    class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-2"
+                >
+                    Menú del Sistema
                 </div>
-            </div>
+
+                {
+                    navItems.map((item) => {
+                        const isActive =
+                            currentPath === item.path ||
+                            (currentPath === "/" && item.path === "/workers");
+                        return (
+                            <a
+                                href={item.path}
+                                class={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                                    isActive
+                                        ? "bg-blue-600 text-white font-medium"
+                                        : "text-gray-400 hover:text-white hover:bg-gray-700"
+                                }`}
+                            >
+                                <svg
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d={item.icon}
+                                    />
+                                </svg>
+                                {item.name}
+                            </a>
+                        );
+                    })
+                }
+            </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-900">
-            <header class="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-gray-900">
+            <header
+                class="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-gray-900"
+            >
                 <h1 class="text-xl font-bold text-white">{title}</h1>
-                
+
                 <div class="flex items-center gap-4 text-sm">
-                    <div class="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-800 border border-gray-700">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <div
+                        class="flex items-center gap-2 px-3 py-1.5 rounded bg-gray-800 border border-gray-700"
+                    >
+                        <svg
+                            class="w-4 h-4 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            ></path>
                         </svg>
-                        <span class="text-gray-200 font-mono" id="clock">00:00:00</span>
+                        <span class="text-gray-200 font-mono" id="clock"
+                            >00:00:00</span
+                        >
                     </div>
                 </div>
             </header>
-            
+
             <div class="flex-1 overflow-auto p-8 scrollbar-hide">
                 <div class="max-w-6xl mx-auto">
                     <slot />
@@ -92,17 +134,19 @@ const navItems = [
         <script>
             function updateClock() {
                 const now = new Date();
-                const clock = document.getElementById('clock');
+                const clock = document.getElementById("clock");
                 if (clock) {
-                    clock.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+                    clock.textContent = now.toLocaleTimeString("en-US", {
+                        hour12: false,
+                    });
                 }
             }
             setInterval(updateClock, 1000);
             updateClock();
-            
-            document.addEventListener('astro:page-load', () => {
+
+            document.addEventListener("astro:page-load", () => {
                 updateClock();
             });
         </script>
-	</body>
+    </body>
 </html>

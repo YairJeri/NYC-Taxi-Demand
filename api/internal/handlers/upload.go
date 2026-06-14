@@ -19,12 +19,15 @@ func NewUploadHandler(h *cluster.WorkerHub) *UploadHandler {
 	return &UploadHandler{cluster: h}
 }
 
-func (h *UploadHandler) HandleCSVUpload(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
+func (h *UploadHandler) HandleCSVUpload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	workers := h.cluster.GetActiveWorkers()
+	if len(workers) == 0 {
+		http.Error(w, "No hay workers disponibles", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -37,7 +40,7 @@ func (h *UploadHandler) HandleCSVUpload(
 		return
 	}
 
-	fmt.Println("[UPLOAD] Workers activos:", h.cluster.GetActiveWorkers())
+	fmt.Println("[UPLOAD] Workers activos:", workers)
 
 	go h.processFile(jobID, path)
 

@@ -13,9 +13,9 @@ export default function WorkerGrid() {
             const res = await fetch('http://localhost:8080/api/dashboard/metrics');
             if (!res.ok) throw new Error('Failed to fetch');
             const data = await res.json();
-            
+
             const currentHistory = { ...historyRef.current };
-            
+
             data.forEach(w => {
                 if (!currentHistory[w.worker_id]) {
                     currentHistory[w.worker_id] = { cpu: [], ram: [], loss: [] };
@@ -24,14 +24,21 @@ export default function WorkerGrid() {
                 h.cpu.push(w.cpu_utilization || 0);
                 h.ram.push(w.ram_usage_bytes ? w.ram_usage_bytes / 1024 / 1024 : 0);
                 h.loss.push(w.current_loss || 0);
-                
+
                 if (h.cpu.length > 20) h.cpu.shift();
                 if (h.ram.length > 20) h.ram.shift();
                 if (h.loss.length > 20) h.loss.shift();
             });
-            
+
             historyRef.current = currentHistory;
-            setWorkers(data || []);
+
+            const sortedWorkers = (data || []).sort((a, b) => {
+                const idA = a.worker_id || '';
+                const idB = b.worker_id || '';
+                return idA.localeCompare(idB, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            setWorkers(sortedWorkers);
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -42,7 +49,7 @@ export default function WorkerGrid() {
 
     useEffect(() => {
         fetchMetrics();
-        const interval = setInterval(fetchMetrics, 2000);
+        const interval = setInterval(fetchMetrics, 1000);
         return () => clearInterval(interval);
     }, []);
 
@@ -88,15 +95,14 @@ export default function WorkerGrid() {
                                     {w.cpu_cores} Núcleos • {totalRamMB}MB RAM • v{w.worker_version}
                                 </p>
                             </div>
-                            <span class={`px-2 py-1 text-xs uppercase font-bold rounded-sm ${
-                                isOnline 
-                                    ? 'bg-green-700 text-white' 
-                                    : 'bg-red-700 text-white'
-                            }`}>
+                            <span class={`px-2 py-1 text-xs uppercase font-bold rounded-sm ${isOnline
+                                ? 'bg-green-700 text-white'
+                                : 'bg-red-700 text-white'
+                                }`}>
                                 {w.status}
                             </span>
                         </div>
-                        
+
                         <div class="p-4 grid grid-cols-2 gap-4">
                             <div class="flex flex-col gap-1">
                                 <div class="text-sm text-gray-400 flex justify-between">
@@ -105,7 +111,7 @@ export default function WorkerGrid() {
                                 </div>
                                 <Sparkline data={history.cpu} color="#3b82f6" height={30} />
                             </div>
-                            
+
                             <div class="flex flex-col gap-1">
                                 <div class="text-sm text-gray-400 flex justify-between">
                                     <span>Uso de RAM</span>

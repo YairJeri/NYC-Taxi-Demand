@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import Sparkline from './Sparkline';
 
 export default function TrainControls() {
@@ -11,8 +11,20 @@ export default function TrainControls() {
     const [steps, setSteps] = useState(5000);
     const [status, setStatus] = useState(null);
 
+    // --- NUEVOS ESTADOS PARA DETECTAR LA DESCONEXIÓN ---
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
+    const [hasConnectionError, setHasConnectionError] = useState(false);
+
+    const statusRef = useRef(status);
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
+
     const addLog = (msg, type = 'info') => {
-        setLogs(prev => [...prev, { time: new Date().toLocaleTimeString('en-US', { hour12: false }), msg, type }]);
+        setLogs(prev => [
+            ...prev,
+            { time: new Date().toLocaleTimeString('en-US', { hour12: false }), msg, type }
+        ]);
     };
 
     const formatTime = (secs) => {
@@ -22,31 +34,49 @@ export default function TrainControls() {
         return `${m}:${s}`;
     };
 
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch('http://localhost:8080/api/status');
-                if (res.ok) {
-                    const data = await res.json();
+    // Función de polling extraída para ejecutarla inmediatamente al montar
+    const fetchStatus = async () => {
+        try {
+            const res = await fetch('http://localhost:8080/api/status');
+            if (res.ok) {
+                const data = await res.json();
+                const prevStatus = statusRef.current;
 
-                    if (status && status.isProcessing && !data.isProcessing) {
-                        addLog('Procesamiento de datos completado.', 'success');
-                        setLoadingClean(false);
-                    }
-                    if (status && status.isTraining && !data.isTraining) {
-                        addLog(`Entrenamiento completado para el modelo ${status.activeModel}.`, 'success');
-                        setLoadingTrain(false);
-                    }
-
-                    if (data.isProcessing && !loadingClean) setLoadingClean(true);
-                    if (data.isTraining && !loadingTrain) setLoadingTrain(true);
-
-                    setStatus(data);
+                if (prevStatus?.isProcessing && !data.isProcessing) {
+                    addLog('Procesamiento de datos completado.', 'success');
+                    setLoadingClean(false);
                 }
-            } catch (err) {}
-        }, 1000);
+                if (prevStatus?.isTraining && !data.isTraining) {
+                    addLog(`Entrenamiento completado para el modelo ${prevStatus.activeModel}.`, 'success');
+                    setLoadingTrain(false);
+                }
+
+                if (data.isProcessing) setLoadingClean(true);
+                if (data.isTraining) setLoadingTrain(true);
+
+                setStatus(data);
+                setHasConnectionError(false); // Conexión exitosa
+            } else {
+                throw new Error(`HTTP ${res.status}`);
+            }
+        } catch (err) {
+            if (statusRef.current !== null || isFirstLoad) {
+                addLog('Desconectado del servidor. Cluster inalcanzable.', 'error');
+                setStatus(null);
+            }
+            setHasConnectionError(true); // <--- Activamos el error visual
+            setLoadingClean(false);
+            setLoadingTrain(false);
+        } finally {
+            setIsFirstLoad(false); // Terminó el intento inicial
+        }
+    };
+
+    useEffect(() => {
+        fetchStatus(); // <--- Ejecutar de inmediato, no esperar 1 segundo entero
+        const interval = setInterval(fetchStatus, 1000);
         return () => clearInterval(interval);
-    }, [status, loadingClean, loadingTrain]);
+    }, []);
 
     const handleClean = async () => {
         setLoadingClean(true);
@@ -60,8 +90,7 @@ export default function TrainControls() {
             addLog('Procesamiento de datos iniciado exitosamente.', 'success');
         } catch (err) {
             addLog(`Clean error: ${err.message}`, 'error');
-        } finally {
-            setTimeout(() => setLoadingClean(false), 1000);
+            setLoadingClean(false);
         }
     };
 
@@ -82,20 +111,36 @@ export default function TrainControls() {
         }
     };
 
+    // 1. ESTADO DE CARGA INICIAL
+    if (isFirstLoad) {
+        return <div class="flex items-center justify-center h-64 text-gray-500">Conectando al Nodo Maestro...</div>;
+    }
+
+    // 2. INTERRUPTOR GLOBAL DE ERROR (Mismo diseño que tu WorkerGrid)
+    if (hasConnectionError) {
+        return (
+            <div class="bg-red-900 border border-red-700 text-red-200 p-4 rounded-md flex items-center gap-3 mb-6">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Cluster fuera de línea o inalcanzable (No se pudo obtener el estado de entrenamiento)
+            </div>
+        );
+    }
+
     return (
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* El resto del HTML de los formularios y logs se queda exactamente igual */}
             <div class="flex flex-col gap-6">
                 <div class="bg-gray-800 border border-gray-700 rounded-md p-6">
                     <h2 class="text-lg font-bold text-gray-100 mb-2">Gestión de Datos</h2>
                     <p class="text-sm text-gray-400 mb-6">Prepara y agrega el dataset desde archivos fuente hacia MongoDB antes de iniciar los trabajos de entrenamiento.</p>
 
-                    <button onClick={handleClean} disabled={loadingClean || loadingTrain} class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 transition-colors">
+                    <button onClick={handleClean} disabled={!status || loadingClean || loadingTrain} class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                         {loadingClean ? (
                             <svg class="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle><path fill="currentColor" opacity="0.75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         ) : (
                             <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         )}
-                        Iniciar Trabajo de Procesamiento (/clean)
+                        {!status ? 'Cluster Inaccesible' : 'Iniciar Trabajo de Procesamiento (/clean)'}
                     </button>
                 </div>
 
@@ -127,13 +172,13 @@ export default function TrainControls() {
                         </div>
 
                         <div class="mt-2">
-                            <button type="submit" disabled={loadingTrain || loadingClean} class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-md font-bold disabled:opacity-50 transition-colors">
+                            <button type="submit" disabled={!status || loadingTrain || loadingClean} class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-md font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                                 {loadingTrain ? (
                                     <svg class="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"></circle><path fill="currentColor" opacity="0.75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                 ) : (
                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                 )}
-                                Despachar Trabajo de Entrenamiento
+                                {!status ? 'Cluster Inaccesible' : 'Despachar Trabajo de Entrenamiento'}
                             </button>
                         </div>
                     </form>
