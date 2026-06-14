@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import WorkerGrid from '../components/WorkerGrid.jsx';
+---
+
+<Layout title="Nodos de Trabajo">
+    <div class="mb-8">
+        <p class="text-gray-400 text-sm">Telemetría y estado en tiempo real de todos los nodos conectados.</p>
+    </div>
+    
+    <WorkerGrid client:load />
+</Layout>

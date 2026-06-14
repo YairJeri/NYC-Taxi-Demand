@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TrainControls from '../components/TrainControls.jsx';
+---
+
+<Layout title="Trabajos de Entrenamiento">
+    <div class="mb-8">
+        <p class="text-gray-400 text-sm">Configura y monitorea trabajos de entrenamiento de ML distribuido.</p>
+    </div>
+    
+    <TrainControls client:load />
+</Layout>

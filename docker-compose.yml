@@ -1,0 +1,46 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    container_name: api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+      - "9090:9090"
+    volumes:
+      - ./api/data:/data
+    environment:
+      MONGO_URI: mongodb://mongo:27017/app
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:8
+    container_name: mongo
+    restart: unless-stopped
+    environment:
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongo:/data/db
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data

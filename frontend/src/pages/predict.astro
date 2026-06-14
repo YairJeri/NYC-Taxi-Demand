@@ -1,0 +1,12 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PredictForm from '../components/PredictForm.jsx';
+---
+
+<Layout title="Inferencia de Modelo">
+    <div class="mb-8">
+        <p class="text-gray-400 text-sm">Ejecuta predicciones puntuales contra el modelo entrenado.</p>
+    </div>
+    
+    <PredictForm client:load />
+</Layout>

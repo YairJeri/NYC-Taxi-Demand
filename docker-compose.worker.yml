@@ -1,0 +1,10 @@
+services:
+  ml_worker:
+    build: ./ml_node
+    restart: unless-stopped
+    environment:
+      MONGO_URI: mongodb://localhost:27017/app
+      API_TCP_ADDRESS: localhost:9090
+    deploy:
+      mode: replicated
+      replicas: 3
