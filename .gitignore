@@ -1,5 +1,5 @@
 data/*
-api/data/
+api/data/2023_Yellow_Taxi_Trip_Data_20260528.csv
 frontend/node_modules/
 frontend/dist/
 frontend/.vscode/
