@@ -3,8 +3,8 @@ services:
     build: ./ml_node
     restart: unless-stopped
     environment:
-      MONGO_URI: mongodb://192.168.1.59:27017/app
-      API_TCP_ADDRESS: 192.168.1.59:9090
+      MONGO_URI: mongodb://[IP_ADDRESS]/app
+      API_TCP_ADDRESS: [IP_ADDRESS]
     deploy:
       mode: replicated
       replicas: 3
